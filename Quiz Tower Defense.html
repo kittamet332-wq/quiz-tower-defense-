@@ -1,0 +1,921 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Quiz Tower Defense</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:"Sarabun","Noto Sans Thai",Tahoma,system-ui,sans-serif}
+button{font-family:inherit;font-size:1rem;cursor:pointer;border:0;border-radius:14px;padding:12px 18px;min-height:46px;color:#fff;background:#3b82f6;font-weight:700;box-shadow:0 4px 0 rgba(0,0,0,.3);transition:transform .08s}
+button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.green{background:#22a559}button.red{background:#e0453a}button.gray{background:#586577}button.gold{background:#e5a50a;color:#222}
+#app{position:fixed;inset:0}
+.screen{position:absolute;inset:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);display:none;flex-direction:column}
+.screen.active{display:flex}
+/* ---------- เมนู ---------- */
+#menu,#levels{align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center;overflow:auto;
+ background:radial-gradient(circle at 30% 20%,#2e7d4f 0,#1b3a4b 45%,#241a4d 100%)}
+.title{font-size:clamp(2rem,8vw,3.6rem);margin:0;font-weight:900;text-shadow:0 4px 0 #0006,0 0 24px #ffd54f88;letter-spacing:1px}
+.sub{opacity:.85;margin:0}
+.menu-btns{display:flex;flex-direction:column;gap:12px;width:min(320px,90%)}
+.menu-btns button{font-size:1.2rem;min-height:56px}
+.progress{background:#0005;border-radius:14px;padding:10px 18px;font-weight:700}
+.lvl-wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;width:100%}
+.lvl{width:min(250px,92%);border-radius:18px;padding:16px;text-align:center;color:#fff;box-shadow:0 6px 0 #0005;position:relative}
+.lvl h3{margin:6px 0}.lvl p{margin:4px 0;font-size:.92rem}
+.lvl.l0{background:linear-gradient(160deg,#3fa34d,#1f6b34)}
+.lvl.l1{background:linear-gradient(160deg,#f0a22e,#c2571a)}
+.lvl.l2{background:linear-gradient(160deg,#3c4bd6,#7b2fbf)}
+.lvl.locked{filter:grayscale(.85) brightness(.7)}
+.lvl .big{font-size:2.4rem}
+/* ---------- เกม ---------- */
+#game{background:#101820}
+#topbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;padding:6px 10px;background:#0b1118;font-weight:700;font-size:clamp(.8rem,3.2vw,1.05rem)}
+#topbar span{white-space:nowrap}
+#stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;background:#0006}
+#cv{width:100%;height:100%;object-fit:contain;touch-action:none;display:block}
+#toast{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#000b;padding:8px 16px;border-radius:20px;font-weight:700;pointer-events:none;opacity:0;transition:opacity .25s;max-width:92%;text-align:center;font-size:.95rem}
+#toast.show{opacity:1}
+#bottom{background:#0b1118;padding:6px 8px;display:flex;flex-direction:column;gap:6px}
+#actions{display:flex;gap:6px;flex-wrap:wrap}
+#actions button{flex:1;min-width:92px;padding:8px 6px;font-size:clamp(.82rem,3.4vw,1rem)}
+#invrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:42px}
+.chip{background:#26364a;border:2px solid #3b5575;border-radius:12px;padding:4px 10px;min-height:40px;font-size:1rem;box-shadow:none}
+.chip.sel{border-color:#ffd54f;background:#5a4a12}
+#hint{font-size:.85rem;opacity:.9;min-height:20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#hint button{min-height:34px;padding:4px 12px;font-size:.85rem}
+/* ---------- หน้าต่างป๊อปอัป ---------- */
+.modal{position:absolute;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;padding:12px;z-index:20}
+.modal.hidden{display:none}
+.panel{background:#1b2735;border:3px solid #3b5575;border-radius:20px;padding:18px;width:min(560px,100%);max-height:94%;overflow:auto;box-shadow:0 10px 40px #000a}
+.panel h2{margin:0 0 10px;text-align:center}
+.panel p{margin:6px 0;line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:#2c4263;box-shadow:0 3px 0 #0006}
+.opt.ok{background:#1f9d55}.opt.bad{background:#d23b3b}
+.tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:.8rem;font-weight:700;background:#3b82f6;margin-right:6px}
+.tag.bonus{background:#e5a50a;color:#222}
+.exp{background:#0004;border-radius:10px;padding:8px 12px;margin-top:8px}
+.cards{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.card{flex:1;min-width:140px;background:#26364a;border:2px solid #3b5575;border-radius:16px;padding:12px;text-align:center}
+.card .em{font-size:2.6rem}.card h4{margin:4px 0}.card p{margin:3px 0;font-size:.85rem}
+.price{font-weight:900;color:#ffd54f}
+.rot{display:none;font-size:.75rem;opacity:.8;text-align:center}
+@media (orientation:portrait) and (max-width:700px){.rot{display:block}}
+
+/* ---------- ตกแต่งเมนู ---------- */
+:root{color-scheme:dark}
+#menu{background:linear-gradient(180deg,#42b4f0 0%,#a9e3ff 50%,#86d35a 50.1%,#3c9a3a 100%)}
+#menu>*:not(.deco){position:relative;z-index:2}
+.deco{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.sun{position:absolute;top:5%;right:8%;width:76px;height:76px;border-radius:50%;background:radial-gradient(#fffbd0,#ffd54f);box-shadow:0 0 44px #ffe082}
+.cloud{position:absolute;left:0;height:34px;width:110px;background:#fff;border-radius:50px;opacity:.92;animation:drift linear infinite}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:50px;height:50px;top:-24px;left:14px}.cloud::after{width:38px;height:38px;top:-16px;left:58px}
+.c1{top:9%;animation-duration:62s}.c2{top:22%;animation-duration:88s;animation-delay:-35s}.c3{top:34%;animation-duration:74s;animation-delay:-52s}
+@keyframes drift{from{transform:translateX(-160px)}to{transform:translateX(calc(100vw + 160px))}}
+#parade{position:absolute;left:0;right:0;bottom:0;height:96px}
+#parade img{position:absolute;bottom:4px;left:-90px;animation:march linear infinite}
+@keyframes march{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 180px))}}
+.bob{animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.logo{font-size:clamp(3rem,13vw,5rem);filter:drop-shadow(0 6px 0 #0004)}
+.title span{display:inline-block;-webkit-text-stroke:2px #14344a;paint-order:stroke fill;text-shadow:0 5px 0 #0005}
+.t1{color:#ffeb3b}.t2{color:#fff}.t3{color:#ff7043}
+#menu .sub{color:#0d3b57;font-weight:800;opacity:1}
+.heroes{display:flex;gap:0;justify-content:center;flex-wrap:wrap;max-width:100%}
+.heroes img{animation:bob 1.2s ease-in-out infinite}
+.chip{display:inline-flex;align-items:center;gap:4px}
+.card .em img{display:block;margin:0 auto}
+.lvl .big img{display:block;margin:0 auto}
+@media (prefers-reduced-motion:reduce){.cloud,#parade img,.bob,.heroes img{animation:none}}
+.credit{margin:6px 0 0;padding:6px 16px;border-radius:14px;background:rgba(10,30,45,.55);color:#fff;font-weight:800;font-size:clamp(.9rem,3.6vw,1.05rem);text-shadow:0 2px 0 #0006}
+</style>
+
+<div id="app">
+
+  <!-- หน้าหลัก -->
+  <section id="menu" class="screen active">
+    <div class="deco"><div class="sun"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div id="parade"></div></div>
+    <div class="logo bob">🏰</div>
+    <h1 class="title"><span class="t1">Quiz</span> <span class="t2">Tower</span> <span class="t3">Defense</span></h1>
+    <p class="sub">ตอบคำถาม สะสมคะแนน ซื้อตัวละคร ป้องกันฐาน!</p>
+    <div class="heroes" id="heroes"></div>
+    <div class="progress" id="progressBox"></div>
+    <div class="menu-btns">
+      <button class="green" id="btnContinue" style="display:none">▶ เล่นต่อ</button>
+      <button class="green" id="btnStart">🎮 เริ่มเกม</button>
+      <button id="btnHow">📖 วิธีการเล่น</button>
+      <button class="gray" id="btnSound">🔊 ตั้งค่าเสียง</button>
+    </div>
+    <p class="credit">จัดทำโดย นางสาว ปาลิตา วงษา</p>
+  </section>
+
+  <!-- เลือกด่าน -->
+  <section id="levels" class="screen">
+    <h1 class="title" style="font-size:clamp(1.6rem,6vw,2.6rem)">เลือกด่าน</h1>
+    <div class="lvl-wrap" id="lvlWrap"></div>
+    <button class="gray" id="btnLvlBack">⬅ กลับหน้าหลัก</button>
+  </section>
+
+  <!-- หน้าเล่น -->
+  <section id="game" class="screen">
+    <div id="topbar">
+      <span id="hudScore">⭐ 0</span>
+      <span id="hudBase">❤️ 100</span>
+      <span id="hudLevel">ด่าน</span>
+      <span id="hudWave">รอบ 1/10</span>
+    </div>
+    <div id="stage">
+      <canvas id="cv" width="800" height="500"></canvas>
+      <div id="toast"></div>
+    </div>
+    <div id="bottom">
+      <div class="rot">💡 หมุนโทรศัพท์เป็นแนวนอนจะเล่นง่ายขึ้น</div>
+      <div id="actions">
+        <button class="gold" id="btnQuiz">❓ ตอบคำถาม</button>
+        <button id="btnShop">🛒 ร้านค้า</button>
+        <button class="green" id="btnWave">▶ เริ่มรอบ</button>
+        <button class="gray" id="btnSpeed">⏩ x1</button>
+        <button class="gray" id="btnPause">☰</button>
+      </div>
+      <div id="invrow"></div>
+      <div id="hint"></div>
+    </div>
+  </section>
+
+  <div id="modal" class="modal hidden"><div class="panel" id="panel"></div></div>
+</div>
+
+<script>
+/* =========================================================
+   Quiz Tower Defense — เกมไฟล์เดียว (HTML + CSS + JavaScript)
+   ส่วนที่ 1: ข้อมูลเกม  2: ระบบบันทึก  3: เสียง  4: ระบบเกม
+   5: วาดภาพ  6: หน้าจอ/UI  7: ควบคุม
+   ========================================================= */
+
+/* ---------- 1) ข้อมูลเกม ---------- */
+const W = 800, H = 500, MAX_TOWERS = 14, START_SCORE = 50;
+
+const LEVELS = [
+  { name:'ป่าฝึกหัด', diff:'ง่าย', emoji:'🌲', baseHp:50, rate:0.10, speed:45, cnt0:5, cntStep:1, spawn:1.1,
+    path:[[-20,70],[640,70],[640,200],[160,200],[160,330],[640,330],[640,430],[750,430]],
+    ground:'#4c9a3c', ground2:'#3f8733', road:'#d4b278', edge:'#7a5c30', decor:['🌲','🌳','🌿','🍄'], theme:'#3fa34d' },
+  { name:'ทะเลทรายอันตราย', diff:'ปานกลาง', emoji:'🏜️', baseHp:100, rate:0.15, speed:60, cnt0:10, cntStep:2, spawn:0.85,
+    path:[[-20,430],[200,430],[200,70],[400,70],[400,380],[600,380],[600,70],[750,70],[750,200]],
+    ground:'#e2b657', ground2:'#d3a447', road:'#b86f30', edge:'#7c3f18', decor:['🌵','🪨','🏜️','🦂'], theme:'#e08a1e' },
+  { name:'ฐานทัพหุ่นยนต์', diff:'ยาก', emoji:'🤖', baseHp:200, rate:0.20, speed:40, cnt0:15, cntStep:3, spawn:0.62,
+    path:[[-20,250],[120,250],[120,80],[300,80],[300,420],[480,420],[480,80],[680,80],[680,250],[750,250]],
+    ground:'#1b1a4a', ground2:'#26246a', road:'#5666e8', edge:'#232a7c', decor:['⚙️','🔩','📡','💠'], theme:'#6b4ce0' }
+];
+
+const ENEMY = {
+  normal:{ name:'บอทธรรมดา', emoji:'🤖', hp:1,   spd:1,   dmg:5,  r:14, ring:'#bdbdbd', size:22 },
+  fast:  { name:'บอทความเร็วสูง', emoji:'👾', hp:0.5, spd:1.7, dmg:4,  r:12, ring:'#ffeb3b', size:19 },
+  armor: { name:'บอทเกราะหนา', emoji:'🛡️', hp:1.5, spd:0.6, dmg:8,  r:17, ring:'#607d8b', size:25 },
+  boss:  { name:'บอทบอส', emoji:'👹', hp:5,   spd:0.55,dmg:30, r:28, ring:'#e53935', size:46 }
+};
+
+const TOWERS = {
+  archer:{ name:'นักธนู', emoji:'🏹', price:20, dmg:10, range:150, cd:0.4, color:'#43a047', desc:'โจมตีเร็ว ระยะไกล' },
+  fire:  { name:'นักเวทไฟ', emoji:'🔥', price:35, dmg:25, range:115, cd:0.8, color:'#ff7043', desc:'โจมตีแรง' },
+  cannon:{ name:'ปืนใหญ่', emoji:'💣', price:50, dmg:30, range:130, cd:1.2, splash:55, color:'#78909c', desc:'โจมตีเป็นวงกว้าง' },
+  ice:   { name:'นักเวทน้ำแข็ง', emoji:'❄️', price:60, dmg:10, range:115, cd:0.8, slow:2.2, color:'#29b6f6', desc:'ทำให้บอทเคลื่อนที่ช้าลง' },
+  sword: { name:'นักดาบ', emoji:'⚔️', price:25, dmg:20, range:65, cd:0.5, color:'#ef5350', desc:'โจมตีระยะใกล้' },
+  bolt:  { name:'นักธนูสายฟ้า', emoji:'⚡', price:70, dmg:20, range:125, cd:0.8, chain:3, color:'#fbc02d', desc:'โจมตีบอทหลายตัวพร้อมกัน' }
+};
+const TOWER_KEYS = Object.keys(TOWERS);
+
+/* ---------- รูปตัวละคร/บอท (SVG ฝังในไฟล์) ---------- */
+const SPRSRC = {}, IMGS = {};
+const SH = '<ellipse cx="32" cy="58" rx="17" ry="4" fill="#000" opacity=".25"/>';
+function defSpr(k, body){
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' + SH + body + '</svg>';
+  SPRSRC[k] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  const im = new Image(); im.src = SPRSRC[k]; IMGS[k] = im;
+}
+const FACE = '<circle cx="28" cy="28" r="1.8" fill="#222"/><circle cx="36" cy="28" r="1.8" fill="#222"/><path d="M29 33 Q32 35 35 33" stroke="#a1472b" stroke-width="1.4" fill="none"/>';
+const WHAT = '<path d="M14 25 Q32 20 50 25 Q44 24 38 22 L34 4 Q32 2 30 4 L26 22 Q20 24 14 25Z"';
+defSpr('archer','<path d="M17 57 Q32 26 47 57Z" fill="#2e7d32"/><path d="M24 57 Q32 36 40 57Z" fill="#388e3c"/><circle cx="32" cy="27" r="11" fill="#ffd1a4"/><path d="M19 30 Q20 7 32 7 Q44 7 45 30 Q40 19 32 19 Q24 19 19 30Z" fill="#43a047"/><path d="M30 6 L37 2 L35 10Z" fill="#c62828"/>'+FACE+'<path d="M49 12 Q62 34 49 56" stroke="#8d5524" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M49 12 L49 56" stroke="#fff" stroke-width="1"/><path d="M30 44 L57 36" stroke="#bbb" stroke-width="2"/><path d="M58 36 L52 33 L53 39Z" fill="#999"/>');
+defSpr('fire','<path d="M16 57 L24 33 L40 33 L48 57Z" fill="#d84315"/><path d="M26 57 L32 38 L38 57Z" fill="#ff7043"/><circle cx="32" cy="27" r="10" fill="#ffd1a4"/>'+WHAT+' fill="#b71c1c"/><rect x="18" y="22" width="28" height="4" rx="2" fill="#7f0000"/>'+FACE+'<rect x="50" y="38" width="3" height="20" fill="#6d4c41"/><circle cx="51.5" cy="36" r="7" fill="#ffab00"/><path d="M51.5 26 Q58 36 51.5 44 Q45 36 51.5 26Z" fill="#ff3d00"/>');
+defSpr('cannon','<rect x="10" y="44" width="34" height="9" rx="3" fill="#795548"/><g transform="rotate(-25 28 36)"><rect x="12" y="28" width="38" height="14" rx="6" fill="#546e7a"/><rect x="44" y="26" width="9" height="18" rx="3" fill="#37474f"/></g><circle cx="22" cy="49" r="9" fill="#4e342e"/><circle cx="22" cy="49" r="4" fill="#8d6e63"/><circle cx="52" cy="53" r="5" fill="#212121"/><circle cx="12" cy="30" r="3" fill="#ff9800"/>');
+defSpr('ice','<path d="M16 57 L24 33 L40 33 L48 57Z" fill="#0277bd"/><path d="M26 57 L32 38 L38 57Z" fill="#4fc3f7"/><circle cx="32" cy="27" r="10" fill="#ffd1a4"/>'+WHAT+' fill="#29b6f6"/><rect x="18" y="22" width="28" height="4" rx="2" fill="#e1f5fe"/>'+FACE+'<rect x="50" y="26" width="3" height="32" fill="#8d6e63"/><g stroke="#e1f5fe" stroke-width="2.5" stroke-linecap="round"><path d="M51.5 14 V34 M42 24 H61 M45 17 L58 31 M58 17 L45 31"/></g>');
+defSpr('sword','<path d="M17 57 L21 34 L43 34 L47 57Z" fill="#c62828"/><rect x="24" y="42" width="16" height="4" fill="#ffd54f"/><rect x="23" y="24" width="18" height="11" rx="3" fill="#ffd1a4"/><path d="M19 28 Q19 8 32 8 Q45 8 45 28 L41 28 L41 22 L23 22 L23 28Z" fill="#90a4ae"/><path d="M32 9 Q38 2 47 8 Q39 7 35 12Z" fill="#e53935"/><circle cx="28" cy="29" r="1.6" fill="#222"/><circle cx="36" cy="29" r="1.6" fill="#222"/><rect x="50" y="10" width="5" height="34" rx="2" fill="#eceff1"/><rect x="45" y="42" width="15" height="4" rx="2" fill="#ffb300"/><rect x="50" y="46" width="5" height="8" fill="#6d4c41"/><path d="M4 36 L19 36 L19 47 Q11.5 55 4 47Z" fill="#1565c0" stroke="#fff" stroke-width="1.5"/>');
+defSpr('bolt','<path d="M17 57 Q32 26 47 57Z" fill="#f9a825"/><circle cx="32" cy="27" r="11" fill="#ffd1a4"/><path d="M19 30 Q20 7 32 7 Q44 7 45 30 Q40 19 32 19 Q24 19 19 30Z" fill="#fdd835"/>'+FACE+'<path d="M13 14 Q1 34 13 54" stroke="#3949ab" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M56 4 L46 26 L52 26 L47 46 L61 20 L54 20 L59 4Z" fill="#ffee58" stroke="#f57f17" stroke-width="1.5" stroke-linejoin="round"/>');
+defSpr('e_normal','<rect x="10" y="36" width="8" height="14" rx="4" fill="#90a4ae"/><rect x="46" y="36" width="8" height="14" rx="4" fill="#90a4ae"/><rect x="18" y="34" width="28" height="22" rx="5" fill="#78909c"/><rect x="22" y="40" width="20" height="8" rx="2" fill="#455a64"/><circle cx="28" cy="44" r="2" fill="#4caf50"/><circle cx="36" cy="44" r="2" fill="#ff5252"/><rect x="16" y="10" width="32" height="26" rx="8" fill="#b0bec5"/><rect x="21" y="18" width="22" height="10" rx="4" fill="#263238"/><circle cx="28" cy="23" r="3.2" fill="#ff1744"/><circle cx="36" cy="23" r="3.2" fill="#ff1744"/><rect x="30.5" y="3" width="3" height="8" fill="#90a4ae"/><circle cx="32" cy="4" r="3" fill="#ff5252"/>');
+defSpr('e_fast','<path d="M2 28 H13 M0 38 H11 M3 48 H14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/><rect x="24" y="50" width="7" height="8" rx="2" fill="#4527a0"/><rect x="38" y="50" width="7" height="8" rx="2" fill="#4527a0"/><path d="M14 40 Q30 6 56 36 Q52 54 30 54 Q14 54 14 40Z" fill="#7e57c2"/><path d="M26 18 L34 14 L42 24 L33 28Z" fill="#ffeb3b"/><circle cx="43" cy="35" r="8" fill="#fff"/><circle cx="45" cy="35" r="4" fill="#d50000"/>');
+defSpr('e_armor','<rect x="10" y="30" width="44" height="26" rx="6" fill="#455a64"/><rect x="14" y="34" width="36" height="18" rx="4" fill="#607d8b"/><path d="M16 32 Q16 8 32 8 Q48 8 48 32Z" fill="#37474f"/><rect x="20" y="18" width="24" height="6" rx="2" fill="#ffab00"/><circle cx="14" cy="32" r="2" fill="#cfd8dc"/><circle cx="50" cy="32" r="2" fill="#cfd8dc"/><path d="M20 36 H44 V46 Q32 57 20 46Z" fill="#78909c" stroke="#263238" stroke-width="2"/><path d="M32 38 V53" stroke="#263238" stroke-width="2"/>');
+defSpr('e_boss','<path d="M10 30 L3 6 L21 20Z" fill="#fff59d"/><path d="M54 30 L61 6 L43 20Z" fill="#fff59d"/><rect x="10" y="32" width="44" height="24" rx="8" fill="#b71c1c"/><circle cx="32" cy="46" r="5" fill="#ffeb3b"/><rect x="12" y="10" width="40" height="30" rx="10" fill="#e53935"/><path d="M17 22 L30 26 L17 31Z" fill="#ffeb3b"/><path d="M47 22 L34 26 L47 31Z" fill="#ffeb3b"/><path d="M20 35 L24 39 L28 35 L32 39 L36 35 L40 39 L44 35" stroke="#fff" stroke-width="2.5" fill="none" stroke-linejoin="round"/><path d="M20 12 L22 2 L28 8 L32 0 L36 8 L42 2 L44 12Z" fill="#ffd600" stroke="#ff8f00" stroke-width="1.5" stroke-linejoin="round"/>');
+function spriteTag(k, s, cls, style){
+  return '<img src="'+SPRSRC[k]+'" width="'+s+'" height="'+s+'" alt="" draggable="false" class="'+(cls||'')+'"'+(style?' style="'+style+'"':'')+'>';
+}
+function drawSpr(k, x, y, s){
+  const im = IMGS[k];
+  if(im && im.complete && im.naturalWidth) ctx.drawImage(im, x-s/2, y-s/2, s, s);
+}
+function buildMenuDeco(){
+  $('heroes').innerHTML = TOWER_KEYS.map((k,i)=>spriteTag(k,56,'bob','animation-delay:'+(i*0.18)+'s')).join('');
+  const keys = ['e_normal','e_fast','e_armor','e_boss','e_normal','e_fast','e_armor','e_normal'];
+  $('parade').innerHTML = keys.map((k,i)=>{
+    const sz = k==='e_boss' ? 78 : 50, dur = 16 + (i*3)%11, del = -((i*5.3)%dur);
+    return spriteTag(k, sz, '', 'animation-duration:'+dur+'s;animation-delay:'+del+'s');
+  }).join('');
+}
+
+// ข้อสอบ: q=คำถาม, o=ตัวเลือก (ข้อแรกคือคำตอบที่ถูก จะถูกสลับตำแหน่งตอนแสดง), e=คำอธิบาย
+const QUIZ = [
+ [ // ด่าน 1 — ง่าย
+  {q:'เมืองหลวงของประเทศไทยคือเมืองใด?',o:['กรุงเทพมหานคร','เชียงใหม่','ภูเก็ต','ขอนแก่น'],e:'กรุงเทพมหานครเป็นเมืองหลวงและเมืองที่ใหญ่ที่สุดของประเทศไทย'},
+  {q:'5 + 7 เท่ากับเท่าใด?',o:['12','11','13','10'],e:'5 + 7 = 12'},
+  {q:'สัตว์ชนิดใดเป็นสัตว์เลี้ยงลูกด้วยนม?',o:['ปลาวาฬ','ปลาฉลาม','กบ','นกกระจอก'],e:'ปลาวาฬเป็นสัตว์เลี้ยงลูกด้วยนม ออกลูกเป็นตัวและให้นมลูก'},
+  {q:'ดวงอาทิตย์ขึ้นทางทิศใด?',o:['ทิศตะวันออก','ทิศตะวันตก','ทิศเหนือ','ทิศใต้'],e:'ดวงอาทิตย์ขึ้นทางทิศตะวันออกและตกทางทิศตะวันตก'},
+  {q:'น้ำบริสุทธิ์เดือดที่กี่องศาเซลเซียส (ที่ระดับน้ำทะเล)?',o:['100 องศา','50 องศา','0 องศา','200 องศา'],e:'น้ำเดือดที่ 100 องศาเซลเซียส ที่ความดันบรรยากาศปกติ'},
+  {q:'1 สัปดาห์มีกี่วัน?',o:['7 วัน','5 วัน','6 วัน','10 วัน'],e:'1 สัปดาห์มี 7 วัน'},
+  {q:'ท้องฟ้าตอนกลางวันที่ปลอดโปร่งมักมีสีอะไร?',o:['สีฟ้า','สีแดง','สีเขียว','สีดำ'],e:'แสงสีฟ้ากระเจิงในบรรยากาศได้ดี ท้องฟ้าจึงดูเป็นสีฟ้า'},
+  {q:'พืชสังเคราะห์แสงด้วยส่วนใดเป็นหลัก?',o:['ใบ','ราก','ดอก','ผล'],e:'ใบมีคลอโรฟิลล์ จึงเป็นส่วนหลักในการสังเคราะห์แสง'},
+  {q:'ธงชาติไทยมีกี่สี?',o:['3 สี','2 สี','4 สี','5 สี'],e:'ธงไตรรงค์มี 3 สี คือ แดง ขาว และน้ำเงิน'},
+  {q:'ดาวเคราะห์ที่เราอาศัยอยู่ชื่อว่าอะไร?',o:['โลก','ดาวอังคาร','ดาวศุกร์','ดวงจันทร์'],e:'เราอาศัยอยู่บนดาวเคราะห์ที่ชื่อว่า "โลก"'},
+  {q:'9 × 3 เท่ากับเท่าใด?',o:['27','24','21','36'],e:'9 × 3 = 27'},
+  {q:'อวัยวะใดใช้ในการมองเห็น?',o:['ตา','หู','จมูก','ลิ้น'],e:'ตาเป็นอวัยวะรับภาพ'}
+ ],
+ [ // ด่าน 2 — ปานกลาง
+  {q:'แม่น้ำสายหลักที่ไหลผ่านกรุงเทพมหานครคือแม่น้ำใด?',o:['แม่น้ำเจ้าพระยา','แม่น้ำโขง','แม่น้ำมูล','แม่น้ำน่าน'],e:'แม่น้ำเจ้าพระยาไหลผ่านกรุงเทพฯ ออกสู่อ่าวไทย'},
+  {q:'ก๊าซที่พืชใช้ในการสังเคราะห์แสงคือข้อใด?',o:['คาร์บอนไดออกไซด์','ออกซิเจน','ไนโตรเจน','ไฮโดรเจน'],e:'พืชใช้คาร์บอนไดออกไซด์และน้ำ สร้างน้ำตาลและปล่อยออกซิเจน'},
+  {q:'ดาวเคราะห์ที่ใหญ่ที่สุดในระบบสุริยะคือดวงใด?',o:['ดาวพฤหัสบดี','ดาวเสาร์','โลก','ดาวอังคาร'],e:'ดาวพฤหัสบดีมีขนาดใหญ่ที่สุดในระบบสุริยะ'},
+  {q:'15% ของ 200 เท่ากับเท่าใด?',o:['30','15','20','45'],e:'200 × 15 ÷ 100 = 30'},
+  {q:'ประเทศใดไม่ได้เป็นสมาชิกอาเซียน?',o:['ญี่ปุ่น','เวียดนาม','ลาว','กัมพูชา'],e:'ญี่ปุ่นอยู่ในเอเชียตะวันออก ไม่ได้เป็นสมาชิกอาเซียน'},
+  {q:'สูตรเคมีของน้ำคือข้อใด?',o:['H₂O','CO₂','O₂','NaCl'],e:'โมเลกุลน้ำประกอบด้วยไฮโดรเจน 2 อะตอม และออกซิเจน 1 อะตอม'},
+  {q:'ทวีปใดมีพื้นที่ใหญ่ที่สุดในโลก?',o:['เอเชีย','แอฟริกา','ยุโรป','อเมริกาเหนือ'],e:'เอเชียเป็นทวีปที่ใหญ่ที่สุดทั้งพื้นที่และจำนวนประชากร'},
+  {q:'รากที่สองของ 144 (√144) เท่ากับเท่าใด?',o:['12','14','11','16'],e:'12 × 12 = 144'},
+  {q:'อวัยวะใดสูบฉีดเลือดไปทั่วร่างกาย?',o:['หัวใจ','ปอด','ตับ','ไต'],e:'หัวใจทำหน้าที่เหมือนปั๊มสูบฉีดเลือด'},
+  {q:'ภาษาใดใช้สร้างโครงสร้างของหน้าเว็บไซต์?',o:['HTML','SQL','Excel','MP3'],e:'HTML (HyperText Markup Language) ใช้กำหนดโครงสร้างเนื้อหาของหน้าเว็บ'},
+  {q:'ปีปกติ (ไม่ใช่ปีอธิกสุรทิน) มีกี่วัน?',o:['365 วัน','360 วัน','366 วัน','350 วัน'],e:'ปีปกติมี 365 วัน ส่วนปีอธิกสุรทินมี 366 วัน'},
+  {q:'ภูเขาที่สูงที่สุดในโลกเมื่อวัดจากระดับน้ำทะเลคือข้อใด?',o:['ยอดเขาเอเวอเรสต์','ยอดเขาฟูจิ','ยอดเขาคิลิมันจาโร','ดอยอินทนนท์'],e:'เอเวอเรสต์สูงประมาณ 8,849 เมตรจากระดับน้ำทะเล'}
+ ],
+ [ // ด่าน 3 — ยาก
+  {q:'ธาตุที่มีเลขอะตอมเท่ากับ 1 คือธาตุใด?',o:['ไฮโดรเจน','ฮีเลียม','ลิเทียม','คาร์บอน'],e:'ไฮโดรเจนมีโปรตอน 1 ตัว จึงมีเลขอะตอมเท่ากับ 1'},
+  {q:'ความเร็วแสงในสุญญากาศมีค่าประมาณเท่าใด?',o:['300,000 กิโลเมตรต่อวินาที','30,000 กิโลเมตรต่อวินาที','3,000 กิโลเมตรต่อวินาที','3,000,000 กิโลเมตรต่อวินาที'],e:'แสงเดินทางในสุญญากาศด้วยความเร็วประมาณ 3 × 10⁸ เมตรต่อวินาที'},
+  {q:'ค่าพาย (π) ประมาณเท่าใด?',o:['3.14159','2.71828','1.61803','1.41421'],e:'π ≈ 3.14159 ส่วน 2.71828 คือค่า e และ 1.61803 คืออัตราส่วนทองคำ'},
+  {q:'DNA ย่อมาจากอะไร?',o:['Deoxyribonucleic acid','Dinitrogen acid','Dynamic nucleic atom','Double nitrate acid'],e:'DNA คือกรดดีออกซีไรโบนิวคลีอิก ซึ่งเก็บข้อมูลทางพันธุกรรม'},
+  {q:'2 ยกกำลัง 10 (2¹⁰) เท่ากับเท่าใด?',o:['1,024','512','2,048','1,000'],e:'2¹⁰ = 1,024'},
+  {q:'ผู้ที่เสนอทฤษฎีสัมพัทธภาพคือใคร?',o:['อัลเบิร์ต ไอน์สไตน์','ไอแซก นิวตัน','กาลิเลโอ กาลิเลอี','นิโคลา เทสลา'],e:'ไอน์สไตน์เสนอทฤษฎีสัมพัทธภาพพิเศษ (1905) และทั่วไป (1915)'},
+  {q:'CPU ของคอมพิวเตอร์ย่อมาจากอะไร?',o:['Central Processing Unit','Computer Power Unit','Central Program Utility','Core Processing Utility'],e:'CPU คือหน่วยประมวลผลกลาง ทำหน้าที่ประมวลผลคำสั่ง'},
+  {q:'อวัยวะใดของมนุษย์ผลิตฮอร์โมนอินซูลิน?',o:['ตับอ่อน','ตับ','ม้าม','กระเพาะอาหาร'],e:'ตับอ่อนผลิตอินซูลินเพื่อควบคุมระดับน้ำตาลในเลือด'},
+  {q:'ชั้นโอโซนอยู่ในชั้นบรรยากาศชั้นใดเป็นหลัก?',o:['สตราโตสเฟียร์','โทรโพสเฟียร์','เมโซสเฟียร์','เอกโซสเฟียร์'],e:'ชั้นโอโซนส่วนใหญ่อยู่ในสตราโตสเฟียร์ ช่วยดูดกลืนรังสีอัลตราไวโอเลต'},
+  {q:'ผลรวมมุมภายในของรูปหกเหลี่ยมเท่ากับกี่องศา?',o:['720 องศา','540 องศา','360 องศา','900 องศา'],e:'สูตร (n − 2) × 180 = (6 − 2) × 180 = 720 องศา'},
+  {q:'กรดที่พบในกระเพาะอาหารของมนุษย์คือกรดชนิดใด?',o:['กรดไฮโดรคลอริก','กรดซัลฟิวริก','กรดไนตริก','กรดแอซีติก'],e:'กระเพาะอาหารหลั่งกรดไฮโดรคลอริกช่วยย่อยอาหารและฆ่าเชื้อโรค'},
+  {q:'ค่าของ log₁₀(1000) เท่ากับเท่าใด?',o:['3','2','10','100'],e:'10³ = 1000 ดังนั้น log₁₀(1000) = 3'}
+ ]
+];
+
+/* ---------- 2) ระบบบันทึกความคืบหน้า (LocalStorage) ---------- */
+const SAVE_KEY = 'quiz_td_save_v1';
+let S = { unlocked:[true,false,false], cleared:[false,false,false], session:null, sound:true };
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){ const d = JSON.parse(raw); S = Object.assign(S, d); }
+  }catch(e){}
+  S.unlocked[0] = true;
+}
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ---------- 3) เสียง (WebAudio) ---------- */
+let AC = null, lastAtk = 0;
+function audioInit(){
+  if(AC) { if(AC.state==='suspended') AC.resume(); return; }
+  try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC = null; }
+}
+function tone(f, d, type, vol, delay){
+  if(!S.sound || !AC) return;
+  try{
+    const t = AC.currentTime + (delay||0);
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type||'square'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(vol||0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+0.02);
+  }catch(e){}
+}
+const SFX = {
+  correct(){ tone(660,.12,'triangle',.08); tone(880,.2,'triangle',.08,.1); },
+  wrong(){ tone(200,.25,'sawtooth',.06); tone(150,.3,'sawtooth',.06,.15); },
+  buy(){ tone(520,.08,'square',.05); tone(780,.12,'square',.05,.08); },
+  place(){ tone(300,.08,'triangle',.07); },
+  attack(){ const n = performance.now(); if(n-lastAtk<70) return; lastAtk=n; tone(900+Math.random()*300,.04,'square',.015); },
+  hit(){ tone(120,.12,'sawtooth',.06); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.08,i*.12)); },
+  lose(){ [400,330,260,180].forEach((f,i)=>tone(f,.3,'sawtooth',.07,i*.22)); },
+  click(){ tone(600,.05,'square',.04); }
+};
+
+/* ---------- 4) ระบบเกม ---------- */
+const $ = id => document.getElementById(id);
+let G = null;              // สถานะเกมที่กำลังเล่น
+let modalOpen = false;
+let bgCanvas = null;       // พื้นหลังที่วาดไว้ล่วงหน้า
+let pathInfo = null;       // ข้อมูลความยาวเส้นทาง
+let ghost = null;          // ตำแหน่งตัวอย่างขณะวาง
+
+function rnd(a,b){ return a + Math.random()*(b-a); }
+function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
+
+function buildPath(pts){
+  const segs = []; let total = 0;
+  for(let i=0;i<pts.length-1;i++){
+    const a = pts[i], b = pts[i+1], len = dist(a[0],a[1],b[0],b[1]);
+    segs.push({a, b, len, start: total}); total += len;
+  }
+  return { pts, segs, total };
+}
+function posAt(s){
+  const P = pathInfo;
+  if(s <= 0) return { x:P.pts[0][0], y:P.pts[0][1] };
+  for(const sg of P.segs){
+    if(s <= sg.start + sg.len){
+      const t = (s - sg.start) / sg.len;
+      return { x: sg.a[0] + (sg.b[0]-sg.a[0])*t, y: sg.a[1] + (sg.b[1]-sg.a[1])*t };
+    }
+  }
+  const e = P.pts[P.pts.length-1]; return { x:e[0], y:e[1] };
+}
+function pathDist(x,y){
+  let best = 1e9;
+  for(const sg of pathInfo.segs){
+    const ax=sg.a[0], ay=sg.a[1], bx=sg.b[0], by=sg.b[1];
+    const dx=bx-ax, dy=by-ay;
+    let t = ((x-ax)*dx + (y-ay)*dy) / (dx*dx+dy*dy);
+    t = Math.max(0, Math.min(1, t));
+    best = Math.min(best, dist(x,y, ax+dx*t, ay+dy*t));
+  }
+  return best;
+}
+
+// จำนวนบอท / พลังชีวิต ตามตารางและสูตรในสเปก
+function enemyCount(l, w){ const L = LEVELS[l]; return L.cnt0 + (w-1)*L.cntStep; }
+function baseEnemyHp(l, w){
+  const L = LEVELS[l];
+  const v = L.baseHp * Math.pow(1 + L.rate, w - 1);
+  return Math.ceil(Math.round(v*1e6)/1e6);   // ปัดขึ้น (กันค่าทศนิยมคลาดเคลื่อน)
+}
+function planWave(l, w){
+  const n = enemyCount(l, w), list = [];
+  const pf = [ w>=4?0.2:0,  w>=2?0.25:0, 0.3 ][l];
+  const pa = [ w>=7?0.15:0, w>=3?0.2:0,  0.22 ][l];
+  for(let i=0;i<n;i++){
+    const r = Math.random();
+    list.push(r < pf ? 'fast' : r < pf+pa ? 'armor' : 'normal');
+  }
+  if(w === 10) list[0] = 'boss';
+  return shuffle(list).sort((a,b)=> (a==='boss'?1:0)-(b==='boss'?1:0)); // บอสมาท้ายสุด
+}
+
+function newGame(level, session){
+  const L = LEVELS[level];
+  pathInfo = buildPath(L.path);
+  buildBackground(level);
+  G = {
+    level, wave: session ? session.wave : 1, phase:'prep',
+    score: session ? session.score : START_SCORE,
+    baseHp: session ? session.baseHp : 100,
+    towers: session ? session.towers.map(t=>({type:t.type,x:t.x,y:t.y,cd:0})) : [],
+    inv: session ? session.inv.slice() : [],
+    shop: session && session.shop ? session.shop.slice() : rollShop(),
+    enemies: [], queue: [], spawnT: 0, fx: [],
+    placing: null, selected: null, speed: 1, usedQ: new Set(), bossFlash: 0
+  };
+  ghost = null;
+  document.body.style.setProperty('--theme', L.theme);
+  go('game'); renderAll();
+  if(!session){ saveSession(); toast('ซื้อตัวละครแล้ววางบนสนาม จากนั้นกด "เริ่มรอบ"'); }
+  else toast('เล่นต่อจากรอบที่ '+G.wave);
+}
+function rollShop(){ return shuffle(TOWER_KEYS).slice(0,3); }
+function saveSession(){
+  if(!G) return;
+  S.session = { level:G.level, wave:G.wave, score:G.score, baseHp:G.baseHp,
+    towers:G.towers.map(t=>({type:t.type,x:t.x,y:t.y})), inv:G.inv.slice(), shop:G.shop.slice() };
+  writeSave();
+}
+
+function startWave(){
+  if(!G || G.phase!=='prep') return;
+  G.queue = planWave(G.level, G.wave);
+  G.spawnT = 0.3; G.phase = 'wave';
+  G.placing = null; ghost = null;
+  renderAll(); toast('รอบที่ '+G.wave+' เริ่มแล้ว! บอท '+G.queue.length+' ตัว');
+}
+function spawnEnemy(type){
+  const T = ENEMY[type], L = LEVELS[G.level];
+  const hp = Math.ceil(Math.round(baseEnemyHp(G.level, G.wave) * T.hp * 1e6)/1e6);
+  const p = posAt(0);
+  G.enemies.push({ type, hp, maxHp:hp, s:0, x:p.x, y:p.y, spd:L.speed*T.spd, slow:0, flash:0, dead:false });
+}
+
+function hitEnemy(e, dmg){
+  if(e.dead) return;
+  e.hp -= dmg; e.flash = 0.1;
+  if(e.hp <= 0){
+    e.dead = true;
+    G.fx.push({k:'ring', x:e.x, y:e.y, r:8, max:ENEMY[e.type].r+14, c:'#fff', t:.3, m:.3});
+  }
+}
+function inRange(t, range){
+  const R = TOWERS[t.type].range;
+  return G.enemies.filter(e => !e.dead && dist(t.x,t.y,e.x,e.y) <= (range||R) + ENEMY[e.type].r*0.5);
+}
+function towerAttack(t){
+  const D = TOWERS[t.type];
+  const list = inRange(t).sort((a,b)=>b.s-a.s);
+  if(!list.length) return false;
+  const tg = list[0];
+  if(D.chain){
+    const hits = list.slice(0, D.chain);
+    let px = t.x, py = t.y;
+    hits.forEach(e => { G.fx.push({k:'line', x1:px, y1:py, x2:e.x, y2:e.y, c:D.color, w:3, t:.15, m:.15, zig:true}); hitEnemy(e, D.dmg); px=e.x; py=e.y; });
+  } else if(D.splash){
+    G.fx.push({k:'line', x1:t.x, y1:t.y, x2:tg.x, y2:tg.y, c:'#ffcc80', w:4, t:.12, m:.12});
+    G.fx.push({k:'ring', x:tg.x, y:tg.y, r:6, max:D.splash, c:'#ff9800', t:.3, m:.3});
+    G.enemies.forEach(e => { if(!e.dead && dist(tg.x,tg.y,e.x,e.y) <= D.splash) hitEnemy(e, D.dmg); });
+  } else if(D.slow){
+    G.fx.push({k:'line', x1:t.x, y1:t.y, x2:tg.x, y2:tg.y, c:D.color, w:4, t:.15, m:.15});
+    G.fx.push({k:'ring', x:tg.x, y:tg.y, r:6, max:45, c:'#81d4fa', t:.3, m:.3});
+    hitEnemy(tg, D.dmg);
+    G.enemies.forEach(e => { if(!e.dead && dist(tg.x,tg.y,e.x,e.y) <= 45) e.slow = D.slow; });
+  } else if(t.type==='sword'){
+    G.fx.push({k:'ring', x:tg.x, y:tg.y, r:4, max:24, c:'#ffcdd2', t:.18, m:.18});
+    hitEnemy(tg, D.dmg);
+  } else {
+    G.fx.push({k:'line', x1:t.x, y1:t.y, x2:tg.x, y2:tg.y, c:D.color, w:t.type==='fire'?5:2, t:.12, m:.12});
+    if(t.type==='fire') G.fx.push({k:'ring', x:tg.x, y:tg.y, r:4, max:22, c:'#ff7043', t:.2, m:.2});
+    hitEnemy(tg, D.dmg);
+  }
+  SFX.attack();
+  return true;
+}
+
+function update(dt){
+  if(!G || G.phase==='over') return;
+  // เกิดบอท
+  if(G.phase==='wave' && G.queue.length){
+    G.spawnT -= dt;
+    if(G.spawnT <= 0){
+      spawnEnemy(G.queue.shift());
+      G.spawnT = LEVELS[G.level].spawn;
+    }
+  }
+  // บอทเดิน
+  for(const e of G.enemies){
+    if(e.dead) continue;
+    const k = e.slow>0 ? 0.5 : 1;
+    if(e.slow>0) e.slow -= dt;
+    if(e.flash>0) e.flash -= dt;
+    e.s += e.spd * k * dt;
+    if(e.s >= pathInfo.total){
+      e.dead = true; e.reached = true;
+      G.baseHp = Math.max(0, G.baseHp - ENEMY[e.type].dmg);
+      G.bossFlash = 0.4; SFX.hit();
+      const b = posAt(pathInfo.total);
+      G.fx.push({k:'ring', x:b.x, y:b.y, r:10, max:50, c:'#ff1744', t:.4, m:.4});
+    } else { const p = posAt(e.s); e.x = p.x; e.y = p.y; }
+  }
+  // ตัวละครโจมตี
+  for(const t of G.towers){
+    t.cd -= dt;
+    if(t.cd <= 0){ if(towerAttack(t)) t.cd = TOWERS[t.type].cd; else t.cd = 0; }
+  }
+  G.enemies = G.enemies.filter(e => !e.dead);
+  for(const f of G.fx) f.t -= dt;
+  G.fx = G.fx.filter(f => f.t > 0);
+  if(G.bossFlash>0) G.bossFlash -= dt;
+
+  if(G.baseHp <= 0){ gameOver(); return; }
+  if(G.phase==='wave' && !G.queue.length && !G.enemies.length) waveClear();
+}
+
+function waveClear(){
+  const w = G.wave;
+  G.phase = 'prep';
+  if(w >= 10){ levelClear(); return; }
+  G.wave++;
+  G.shop = rollShop();       // สุ่มร้านค้าใหม่ทุกรอบ
+  saveSession(); renderAll(); SFX.win();
+  openModal(`<h2>🎉 ผ่านรอบที่ ${w}!</h2>
+    <p style="text-align:center">กำจัดบอทครบทุกตัวแล้ว ร้านค้าสุ่มตัวละครชุดใหม่ให้คุณแล้ว</p>
+    <p style="text-align:center">เตรียมตัวให้พร้อม แล้วกด "เริ่มรอบ" เมื่อต้องการสู้รอบที่ ${G.wave}</p>
+    <div class="row"><button class="gold" id="mQuiz">❓ ตอบคำถาม</button><button id="mShop">🛒 ร้านค้า</button><button class="green" id="mOk">ตกลง</button></div>`,
+    ()=>{ $('mOk').onclick=closeModal; $('mQuiz').onclick=showQuiz; $('mShop').onclick=showShop; });
+}
+function levelClear(){
+  const l = G.level;
+  S.cleared[l] = true;
+  if(l < 2) S.unlocked[l+1] = true;
+  S.session = null; writeSave();
+  G.phase = 'over'; SFX.win();
+  const last = l === 2;
+  openModal(last
+    ? `<h2>🏆 ชนะเกมทั้งหมด!</h2><p style="text-align:center">คุณป้องกันฐานได้ครบทั้ง 3 ด่าน 30 รอบ ยอดเยี่ยมมาก!</p>
+       <div class="row"><button id="mLv">เลือกด่าน</button><button class="gray" id="mMenu">หน้าหลัก</button></div>`
+    : `<h2>⭐ ผ่านด่านที่ ${l+1}!</h2><p style="text-align:center">ปลดล็อก "${LEVELS[l+1].name}" แล้ว</p>
+       <div class="row"><button class="green" id="mNext">ไปด่านถัดไป</button><button id="mLv">เลือกด่าน</button><button class="gray" id="mMenu">หน้าหลัก</button></div>`,
+    ()=>{
+      $('mLv').onclick = ()=>{ closeModal(); showLevels(); };
+      $('mMenu').onclick = ()=>{ closeModal(); showMenu(); };
+      if($('mNext')) $('mNext').onclick = ()=>{ closeModal(); newGame(l+1); };
+    });
+}
+function gameOver(){
+  G.phase = 'over'; S.session = null; writeSave(); SFX.lose();
+  const l = G.level, w = G.wave;
+  openModal(`<h2>💀 Game Over</h2><p style="text-align:center">ฐานถูกทำลายในรอบที่ ${w}/10 ของด่าน "${LEVELS[l].name}"</p>
+    <div class="row"><button class="green" id="mRe">🔄 เริ่มเล่นใหม่</button><button class="gray" id="mMenu">หน้าหลัก</button></div>`,
+    ()=>{ $('mRe').onclick=()=>{ closeModal(); newGame(l); }; $('mMenu').onclick=()=>{ closeModal(); showMenu(); }; });
+}
+
+/* ---------- 5) วาดภาพ ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+function buildBackground(level){
+  const L = LEVELS[level];
+  bgCanvas = document.createElement('canvas'); bgCanvas.width = W; bgCanvas.height = H;
+  const c = bgCanvas.getContext('2d'), rng = mulberry(level*977+13);
+  c.fillStyle = L.ground; c.fillRect(0,0,W,H);
+  // ลวดลายพื้น
+  if(level === 2){
+    c.strokeStyle = '#3a38a0'; c.lineWidth = 1; c.globalAlpha = .5;
+    for(let x=0;x<=W;x+=40){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); }
+    for(let y=0;y<=H;y+=40){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); }
+    c.globalAlpha = 1;
+  } else {
+    c.fillStyle = L.ground2;
+    for(let i=0;i<90;i++){ c.beginPath(); c.arc(rng()*W, rng()*H, 6+rng()*18, 0, 7); c.fill(); }
+  }
+  // เส้นทาง
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  const trace = () => { c.beginPath(); L.path.forEach((p,i)=> i? c.lineTo(p[0],p[1]) : c.moveTo(p[0],p[1])); };
+  c.strokeStyle = L.edge; c.lineWidth = 50; trace(); c.stroke();
+  c.strokeStyle = L.road; c.lineWidth = 40; trace(); c.stroke();
+  if(level === 2){ c.strokeStyle = '#9fb0ff'; c.lineWidth = 2; c.setLineDash([12,14]); trace(); c.stroke(); c.setLineDash([]); }
+  // ของตกแต่ง
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  let placed = 0, tries = 0;
+  const pi = buildPath(L.path); const keep = pathInfo; pathInfo = pi;
+  while(placed < 38 && tries < 600){
+    tries++;
+    const x = 18 + rng()*(W-36), y = 18 + rng()*(H-36);
+    if(pathDist(x,y) < 44) continue;
+    c.font = (16+rng()*14)+'px serif';
+    c.fillText(L.decor[Math.floor(rng()*L.decor.length)], x, y);
+    placed++;
+  }
+  pathInfo = keep;
+  // ฐาน
+  const b = L.path[L.path.length-1];
+  c.beginPath(); c.arc(b[0], b[1], 32, 0, 7); c.fillStyle = '#00000055'; c.fill();
+  c.font = '44px serif'; c.fillText('🏰', b[0], b[1]);
+  // จุดเกิด
+  const s = L.path[0];
+  c.font = '22px serif'; c.fillText('🚪', Math.max(s[0],14), s[1]);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(!G || !bgCanvas){ requestAnimationFrame(draw); return; }
+  ctx.drawImage(bgCanvas, 0, 0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  // วงระยะของตัวละครที่เลือก
+  if(G.selected){
+    const t = G.selected, R = TOWERS[t.type].range;
+    ctx.beginPath(); ctx.arc(t.x,t.y,R,0,7); ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  }
+  // ตัวละคร
+  for(const t of G.towers){
+    const D = TOWERS[t.type];
+    ctx.beginPath(); ctx.arc(t.x, t.y+2, 17, 0, 7); ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(t.x, t.y, 16, 0, 7); ctx.fillStyle = D.color; ctx.fill();
+    ctx.lineWidth = G.selected===t ? 4 : 2; ctx.strokeStyle = G.selected===t ? '#ffd54f' : '#fff'; ctx.stroke();
+    drawSpr(t.type, t.x, t.y-7, 44);
+  }
+  // บอท (เรียงตามแกน y)
+  const es = G.enemies.slice().sort((a,b)=>a.y-b.y);
+  for(const e of es){
+    const T = ENEMY[e.type];
+    ctx.beginPath(); ctx.arc(e.x, e.y+3, T.r, 0, 7); ctx.fillStyle='rgba(0,0,0,.3)'; ctx.fill();
+    if(e.slow>0){ ctx.beginPath(); ctx.arc(e.x, e.y, T.r+4, 0, 7); ctx.fillStyle='rgba(129,212,251,.55)'; ctx.fill(); }
+    drawSpr('e_'+e.type, e.x, e.y-2, T.r*2.7);
+    if(e.flash>0){ ctx.globalAlpha=.55; ctx.beginPath(); ctx.arc(e.x, e.y, T.r, 0, 7); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1; }
+    const bw = T.r*2+4, bx = e.x-bw/2, by = e.y-T.r*1.35-8;
+    ctx.fillStyle='#000a'; ctx.fillRect(bx,by,bw,5);
+    ctx.fillStyle = e.hp/e.maxHp>.5 ? '#4caf50' : e.hp/e.maxHp>.25 ? '#ffc107' : '#f44336';
+    ctx.fillRect(bx,by,bw*Math.max(0,e.hp/e.maxHp),5);
+  }
+  // เอฟเฟกต์
+  for(const f of G.fx){
+    const a = Math.max(0, f.t/f.m);
+    ctx.globalAlpha = a;
+    if(f.k==='line'){
+      ctx.strokeStyle=f.c; ctx.lineWidth=f.w; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(f.x1,f.y1);
+      if(f.zig){ const mx=(f.x1+f.x2)/2+rnd(-10,10), my=(f.y1+f.y2)/2+rnd(-10,10); ctx.lineTo(mx,my); }
+      ctx.lineTo(f.x2,f.y2); ctx.stroke();
+    } else if(f.k==='ring'){
+      const r = f.r + (f.max-f.r)*(1-a);
+      ctx.strokeStyle=f.c; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(f.x,f.y,r,0,7); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // ตัวอย่างตำแหน่งวาง
+  if(G.placing && ghost){
+    const D = TOWERS[G.placing], ok = canPlace(ghost.x, ghost.y).ok;
+    ctx.beginPath(); ctx.arc(ghost.x,ghost.y,D.range,0,7);
+    ctx.fillStyle = ok?'rgba(80,255,120,.18)':'rgba(255,60,60,.18)'; ctx.fill();
+    ctx.strokeStyle = ok?'#69f0ae':'#ff5252'; ctx.lineWidth=2; ctx.stroke();
+    ctx.globalAlpha=.85; ctx.beginPath(); ctx.arc(ghost.x,ghost.y,16,0,7); ctx.fillStyle=D.color; ctx.fill();
+    drawSpr(G.placing, ghost.x, ghost.y-7, 44); ctx.globalAlpha=1;
+  }
+  if(G.bossFlash>0){ ctx.fillStyle='rgba(255,0,0,'+(G.bossFlash*.35)+')'; ctx.fillRect(0,0,W,H); }
+  requestAnimationFrame(draw);
+}
+
+/* ---------- 6) หน้าจอ / UI ---------- */
+function go(id){
+  ['menu','levels','game'].forEach(s => $(s).classList.toggle('active', s===id));
+}
+let toastTimer = 0;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function openModal(html, setup){
+  $('panel').innerHTML = html; $('modal').classList.remove('hidden'); modalOpen = true;
+  if(setup) setup();
+}
+function closeModal(){ $('modal').classList.add('hidden'); modalOpen = false; if(G) renderAll(); }
+
+function showMenu(){
+  go('menu');
+  const n = S.cleared.filter(Boolean).length;
+  $('progressBox').innerHTML = `📊 ผ่านแล้ว ${n}/3 ด่าน &nbsp; ${S.cleared.map(c=>c?'⭐':'☆').join('')}`
+    + (S.session ? `<br><small>เล่นค้างไว้: ด่าน ${S.session.level+1} รอบ ${S.session.wave}/10 · คะแนน ${S.session.score}</small>` : '');
+  $('btnContinue').style.display = S.session ? '' : 'none';
+  $('btnSound').textContent = S.sound ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด';
+}
+function showLevels(){
+  go('levels');
+  const wrap = $('lvlWrap'); wrap.innerHTML = '';
+  LEVELS.forEach((L,i)=>{
+    const div = document.createElement('div');
+    const open = S.unlocked[i];
+    div.className = 'lvl l'+i+(open?'':' locked');
+    div.innerHTML = `<div class="big">${open?spriteTag('e_boss',70,'bob'):'🔒'}</div><h3>ด่านที่ ${i+1}: ${L.emoji} ${L.name}</h3>
+      <p>ความยาก: <b>${L.diff}</b> ${S.cleared[i]?'· ✅ ผ่านแล้ว':''}</p>
+      <p>${['บอทพลังชีวิตน้อย เคลื่อนที่ช้า','บอทพลังชีวิตมากขึ้น เคลื่อนที่เร็วขึ้น','บอทพลังชีวิตสูง เร็ว มีบอทพิเศษและบอส'][i]}</p>
+      ${open?'<button class="green">เล่นด่านนี้</button>':'<p>ผ่านด่านก่อนหน้าเพื่อปลดล็อก</p>'}`;
+    if(open) div.querySelector('button').onclick = ()=>{ SFX.click(); newGame(i); };
+    wrap.appendChild(div);
+  });
+}
+
+let hudCache = '';
+function renderHUD(){
+  if(!G) return;
+  const L = LEVELS[G.level];
+  const k = [G.score,G.baseHp,G.level,G.wave,G.phase].join('|');
+  if(k === hudCache) return; hudCache = k;
+  $('hudScore').textContent = '⭐ '+G.score;
+  $('hudBase').textContent = '❤️ '+G.baseHp+'/100';
+  $('hudLevel').textContent = 'ด่าน '+(G.level+1)+': '+L.name;
+  $('hudWave').textContent = 'รอบ '+G.wave+'/10';
+}
+function renderAll(){
+  hudCache = ''; renderHUD(); renderInv(); renderHint();
+  const bw = $('btnWave');
+  bw.disabled = !G || G.phase !== 'prep' || modalOpen;
+  bw.textContent = G && G.phase==='wave' ? '⚔️ กำลังสู้…' : '▶ เริ่มรอบ'+(G?' '+G.wave:'');
+  $('btnSpeed').textContent = '⏩ x'+(G?G.speed:1);
+}
+function renderInv(){
+  const box = $('invrow'); box.innerHTML = '';
+  const cnt = {}; G.inv.forEach(t=>cnt[t]=(cnt[t]||0)+1);
+  const keys = Object.keys(cnt);
+  const lab = document.createElement('span');
+  lab.style.cssText = 'font-size:.85rem;opacity:.85';
+  lab.textContent = `ตัวละครที่มี (${G.towers.length+G.inv.length}/${MAX_TOWERS}):`;
+  box.appendChild(lab);
+  if(!keys.length){ const s=document.createElement('span'); s.style.opacity='.6'; s.style.fontSize='.85rem'; s.textContent='ยังไม่มีตัวที่รอวาง'; box.appendChild(s); }
+  keys.forEach(k=>{
+    const b = document.createElement('button');
+    b.className = 'chip'+(G.placing===k?' sel':'');
+    b.innerHTML = spriteTag(k,30)+' '+TOWERS[k].name+' ×'+cnt[k];
+    b.onclick = ()=>{ audioInit(); SFX.click(); G.placing = G.placing===k ? null : k; G.selected=null; ghost=null; renderAll(); };
+    box.appendChild(b);
+  });
+}
+function renderHint(){
+  const h = $('hint');
+  if(G.placing){
+    h.innerHTML = `📍 แตะ/คลิกบนสนามเพื่อวาง ${spriteTag(G.placing,24)} ${TOWERS[G.placing].name} (ลากนิ้วเพื่อปรับตำแหน่ง แล้วปล่อยเพื่อวาง)`;
+  } else if(G.selected){
+    const D = TOWERS[G.selected.type], refund = Math.floor(D.price/2);
+    h.innerHTML = `${spriteTag(G.selected.type,26)} <b>${D.name}</b> · ความเสียหาย ${D.dmg} · ระยะ ${D.range} <button class="red" id="btnSell">ขาย (+${refund})</button>`;
+    $('btnSell').onclick = ()=>{
+      G.towers = G.towers.filter(t=>t!==G.selected); G.score += refund; G.selected = null;
+      SFX.buy(); saveSession(); renderAll(); toast('ขายตัวละครแล้ว +'+refund+' คะแนน');
+    };
+  } else {
+    h.textContent = G.phase==='prep' ? '💡 ตอบคำถามเพื่อรับคะแนน → ซื้อตัวละครในร้านค้า → วางบนสนาม → เริ่มรอบ' : '⚔️ ตัวละครโจมตีบอทอัตโนมัติ — ระหว่างสู้ยังตอบคำถามและซื้อของได้';
+  }
+}
+
+/* --- ระบบคำถาม --- */
+function pickQuestion(){
+  const pool = QUIZ[G.level];
+  let avail = pool.map((_,i)=>i).filter(i=>!G.usedQ.has(i));
+  if(!avail.length){ G.usedQ.clear(); avail = pool.map((_,i)=>i); }
+  const i = avail[Math.floor(Math.random()*avail.length)];
+  G.usedQ.add(i);
+  const q = pool[i];
+  const opts = shuffle(q.o.map((t,idx)=>({t, ok:idx===0})));
+  return { q:q.q, e:q.e, opts, bonus: Math.random() < 0.2 };
+}
+function showQuiz(){
+  audioInit();
+  const Q = pickQuestion(), pts = Q.bonus ? 20 : 10;
+  const lv = ['ง่าย','ปานกลาง','ยาก'][G.level];
+  openModal(`<h2>❓ ตอบคำถาม</h2>
+    <p><span class="tag">ระดับ${lv}</span>${Q.bonus?'<span class="tag bonus">⭐ โบนัสพิเศษ +20</span>':'<span class="tag" style="background:#586577">ตอบถูก +10</span>'}
+    <span style="float:right">⭐ ${G.score}</span></p>
+    <p style="font-size:1.15rem;font-weight:700">${Q.q}</p>
+    <div id="opts"></div><div id="qres"></div>
+    <div class="row"><button class="gray" id="qClose">ปิด</button></div>`,
+    ()=>{
+      const box = $('opts'); let done = false;
+      $('qClose').onclick = closeModal;
+      Q.opts.forEach((o,i)=>{
+        const b = document.createElement('button');
+        b.className = 'opt'; b.textContent = ['ก','ข','ค','ง'][i]+'. '+o.t;
+        b.onclick = ()=>{
+          if(done) return; done = true;
+          [...box.children].forEach((c,j)=>{ c.disabled = true; c.style.opacity = 1; if(Q.opts[j].ok) c.classList.add('ok'); });
+          if(o.ok){
+            G.score += pts; b.classList.add('ok'); SFX.correct();
+            $('qres').innerHTML = `<p style="color:#7CFFA8;font-weight:800">✅ ถูกต้อง! ได้รับ +${pts} คะแนน</p><div class="exp">💡 ${Q.e}</div>`;
+          } else {
+            b.classList.add('bad'); SFX.wrong();
+            $('qres').innerHTML = `<p style="color:#ff8a80;font-weight:800">❌ ผิด! ไม่ได้รับคะแนน</p><div class="exp">💡 ${Q.e}</div>`;
+          }
+          $('qClose').insertAdjacentHTML('beforebegin', '<button class="gold" id="qNext">➡ คำถามถัดไป</button>');
+          $('qNext').onclick = showQuiz;
+          saveSession(); renderHUD();
+        };
+        box.appendChild(b);
+      });
+    });
+}
+
+/* --- ร้านค้า --- */
+function showShop(){
+  audioInit();
+  const full = G.towers.length + G.inv.length >= MAX_TOWERS;
+  let html = `<h2>🛒 ร้านค้าตัวละคร</h2><p style="text-align:center">⭐ คะแนนของคุณ: <b>${G.score}</b> · ตัวละคร ${G.towers.length+G.inv.length}/${MAX_TOWERS}</p><div class="cards">`;
+  G.shop.forEach((k,i)=>{
+    const D = TOWERS[k], can = G.score >= D.price && !full;
+    html += `<div class="card"><div class="em">${spriteTag(k,76,'bob')}</div><h4>${D.name}</h4><p>${D.desc}</p>
+      <p>💥 ความเสียหาย ${D.dmg} · 🎯 ระยะ ${D.range}</p><p class="price">⭐ ${D.price}</p>
+      <button class="${can?'green':'gray'}" data-i="${i}" ${can?'':'disabled'}>ซื้อ</button></div>`;
+  });
+  html += `</div><p style="text-align:center;font-size:.85rem;opacity:.8">${full?'ตัวละครเต็มจำนวนแล้ว — ขายตัวเก่าก่อนจึงจะซื้อเพิ่มได้':'ร้านค้าจะสุ่มชุดใหม่เมื่อขึ้นรอบใหม่ · เก็บคะแนนไว้ซื้อรอบถัดไปได้'}</p>
+    <div class="row"><button class="gold" id="sQuiz">❓ ตอบคำถามหาคะแนน</button><button class="gray" id="sClose">ปิด</button></div>`;
+  openModal(html, ()=>{
+    $('sClose').onclick = closeModal;
+    $('sQuiz').onclick = showQuiz;
+    document.querySelectorAll('#panel .card button').forEach(b=>{
+      b.onclick = ()=>{
+        const k = G.shop[+b.dataset.i], D = TOWERS[k];
+        if(G.score < D.price || G.towers.length+G.inv.length >= MAX_TOWERS) return;
+        G.score -= D.price; G.inv.push(k); SFX.buy(); saveSession();
+        showShop(); toast('ซื้อ '+D.name+' แล้ว! กดที่ตัวละครด้านล่างแล้ววางบนสนาม');
+      };
+    });
+  });
+}
+
+function showHow(){
+  openModal(`<h2>📖 วิธีการเล่น</h2>
+    <p>1. กด <b>❓ ตอบคำถาม</b> ตอบถูกได้ <b>10 คะแนน</b> (คำถามโบนัส 20 คะแนน) ตอบผิดไม่เสียคะแนน</p>
+    <p>2. กด <b>🛒 ร้านค้า</b> ซื้อตัวละครที่สุ่มมา 3 ตัว (สุ่มใหม่ทุกรอบ)</p>
+    <p>3. แตะตัวละครในแถบ "ตัวละครที่มี" แล้วแตะบนสนามเพื่อวาง (วางทับกันหรือบนเส้นทางไม่ได้ สูงสุด ${MAX_TOWERS} ตัว)</p>
+    <p>4. กด <b>▶ เริ่มรอบ</b> บอทจะเดินตามเส้นทางไปยังฐาน ตัวละครจะโจมตีเองอัตโนมัติ</p>
+    <p>5. ถ้าบอทเดินถึงฐาน ฐานจะเสียพลังชีวิต เหลือ 0 = แพ้ ผ่านครบ 10 รอบ = ผ่านด่าน</p>
+    <p>6. แตะตัวละครที่วางแล้วเพื่อดูระยะ หรือขายคืนครึ่งราคา</p>
+    <p><b>ตัวละคร:</b> ยิงเร็ว · แรง · ระเบิดวงกว้าง · ทำให้ช้า · ระยะใกล้ · ฟาดหลายตัว</p>
+    <p style="text-align:center">${TOWER_KEYS.map(k=>spriteTag(k,40)).join(' ')}</p>
+    <p><b>บอท:</b> ธรรมดา · ความเร็วสูง · เกราะหนา · บอส (รอบที่ 10)</p>
+    <p style="text-align:center">${['e_normal','e_fast','e_armor','e_boss'].map(k=>spriteTag(k,46)).join(' ')}</p>
+    <p>เริ่มแต่ละด่านด้วย ⭐ ${START_SCORE} คะแนน</p>
+    <div class="row"><button class="green" id="hOk">เข้าใจแล้ว</button></div>`, ()=>{ $('hOk').onclick=closeModal; });
+}
+function showSettings(){
+  openModal(`<h2>⚙️ ตั้งค่า</h2>
+    <div class="row"><button id="sSound">${S.sound?'🔊 เสียง: เปิด':'🔇 เสียง: ปิด'}</button></div>
+    <div class="row"><button class="red" id="sReset">🗑️ ล้างความคืบหน้าทั้งหมด</button></div>
+    <div class="row"><button class="gray" id="sOk">ปิด</button></div>`,
+    ()=>{
+      $('sSound').onclick = ()=>{ audioInit(); S.sound=!S.sound; writeSave(); SFX.click(); showSettings(); refreshSoundBtns(); };
+      let armed = false;
+      $('sReset').onclick = ()=>{
+        if(!armed){ armed = true; $('sReset').textContent = '⚠️ กดอีกครั้งเพื่อยืนยันการล้าง'; return; }
+        S = { unlocked:[true,false,false], cleared:[false,false,false], session:null, sound:S.sound };
+        writeSave(); closeModal(); G = null; showMenu();
+      };
+      $('sOk').onclick = closeModal;
+    });
+}
+function refreshSoundBtns(){ $('btnSound').textContent = S.sound ? '🔊 เสียง: เปิด' : '🔇 เสียง: ปิด'; }
+
+/* ---------- 7) การควบคุม ---------- */
+function canPlace(x, y){
+  if(x<16||y<16||x>W-16||y>H-16) return {ok:false, why:'วางนอกสนามไม่ได้'};
+  if(pathDist(x,y) < 34) return {ok:false, why:'วางบนเส้นทางของบอทไม่ได้'};
+  const b = pathInfo.pts[pathInfo.pts.length-1];
+  if(dist(x,y,b[0],b[1]) < 50) return {ok:false, why:'ใกล้ฐานเกินไป'};
+  for(const t of G.towers) if(dist(x,y,t.x,t.y) < 36) return {ok:false, why:'วางทับตัวละครอื่นไม่ได้'};
+  return {ok:true};
+}
+function evPos(e){
+  const r = cv.getBoundingClientRect();
+  const sc = Math.min(r.width/W, r.height/H);
+  const ox = (r.width - W*sc)/2, oy = (r.height - H*sc)/2;
+  return { x:(e.clientX - r.left - ox)/sc, y:(e.clientY - r.top - oy)/sc };
+}
+cv.addEventListener('pointerdown', e=>{
+  if(!G || modalOpen || G.phase==='over') return;
+  audioInit();
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  const p = evPos(e);
+  if(G.placing){ ghost = p; return; }
+  let found = null, best = 24;
+  for(const t of G.towers){ const d = dist(p.x,p.y,t.x,t.y); if(d < best){ best = d; found = t; } }
+  G.selected = found; renderHint();
+});
+cv.addEventListener('pointermove', e=>{
+  if(!G || !G.placing) return;
+  if(e.pointerType==='mouse' || e.buttons) ghost = evPos(e);
+});
+cv.addEventListener('pointerup', e=>{
+  if(!G || !G.placing || !ghost || modalOpen) return;
+  const p = evPos(e); ghost = p;
+  const r = canPlace(p.x, p.y);
+  if(!r.ok){ toast('⚠️ '+r.why); return; }
+  const k = G.placing;
+  const idx = G.inv.indexOf(k); if(idx<0){ G.placing=null; renderAll(); return; }
+  G.inv.splice(idx,1);
+  G.towers.push({type:k, x:p.x, y:p.y, cd:0.2});
+  SFX.place();
+  G.fx.push({k:'ring', x:p.x, y:p.y, r:6, max:30, c:'#fff', t:.3, m:.3});
+  if(!G.inv.includes(k)) { G.placing = null; ghost = null; }
+  saveSession(); renderAll();
+});
+
+$('btnStart').onclick = ()=>{ audioInit(); SFX.click(); showLevels(); };
+$('btnContinue').onclick = ()=>{ audioInit(); SFX.click(); if(S.session) newGame(S.session.level, S.session); };
+$('btnHow').onclick = ()=>{ audioInit(); SFX.click(); showHow(); };
+$('btnSound').onclick = ()=>{ audioInit(); S.sound = !S.sound; writeSave(); SFX.click(); refreshSoundBtns(); };
+$('btnLvlBack').onclick = ()=>{ SFX.click(); showMenu(); };
+$('btnQuiz').onclick = ()=>{ if(G && G.phase!=='over') showQuiz(); };
+$('btnShop').onclick = ()=>{ if(G && G.phase!=='over') showShop(); };
+$('btnWave').onclick = ()=>{ audioInit(); startWave(); };
+$('btnSpeed').onclick = ()=>{ if(!G) return; G.speed = G.speed===1 ? 2 : G.speed===2 ? 3 : 1; renderAll(); };
+$('btnPause').onclick = ()=>{
+  if(!G || G.phase==='over') return;
+  openModal(`<h2>⏸ หยุดเกม</h2><div class="row"><button class="green" id="pBack">▶ เล่นต่อ</button>
+    <button id="pSet">⚙️ ตั้งค่าเสียง</button><button class="red" id="pMenu">🏠 ออกไปหน้าหลัก</button></div>
+    <p style="text-align:center;font-size:.85rem;opacity:.8">ความคืบหน้าถูกบันทึกอัตโนมัติ (รอบที่กำลังสู้จะเริ่มใหม่เมื่อเล่นต่อ)</p>`,
+    ()=>{
+      $('pBack').onclick = closeModal;
+      $('pSet').onclick = showSettings;
+      $('pMenu').onclick = ()=>{ saveSession(); closeModal(); G = null; showMenu(); };
+    });
+};
+
+// ลูปเกม
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - lastT)/1000); lastT = now;
+  if(G && !modalOpen && $('game').classList.contains('active')){
+    const n = G.speed;
+    for(let i=0;i<n;i++) update(dt);
+    renderHUD();
+  }
+  requestAnimationFrame(loop);
+}
+
+// เริ่มต้น
+loadSave(); buildMenuDeco(); showMenu();
+requestAnimationFrame(loop);
+requestAnimationFrame(draw);
+</script>
+
+</body></html>
